@@ -17,36 +17,41 @@
 
 const URL = require('url');
 
-module.exports = function (keycloak) {
-  return function postAuth (request, response, next) {
-    if (!request.query.auth_callback) {
-      return next();
-    }
+module.exports = function(keycloak) {
+    return async function postAuth(ctx, next) {
 
-    if (request.query.error) {
-      return keycloak.accessDenied(request, response, next);
-    }
-
-    keycloak.getGrantFromCode(request.query.code, request, response)
-      .then(grant => {
-        let urlParts = {
-          pathname: request.path,
-          query: request.query
-        };
-
-        delete urlParts.query.code;
-        delete urlParts.query.auth_callback;
-        delete urlParts.query.state;
-
-        let cleanUrl = URL.format(urlParts);
-
-        request.kauth.grant = grant;
-        try {
-          keycloak.authenticated(request);
-        } catch (err) {
-          console.log(err);
+        if (!ctx.query.auth_callback) {
+            return next();
         }
-        response.redirect(cleanUrl);
-      });
-  };
+
+        if (ctx.query.error) {
+            console.log(ctx.query.error);
+            return keycloak.accessDenied(ctx, next);
+        }
+
+        try {
+            const grant = await keycloak.getGrantFromCode(ctx.query.code, ctx);
+
+            let urlParts = {
+                pathname: ctx.request.path,
+                query: ctx.request.query
+            };
+
+            delete urlParts.query.code;
+            delete urlParts.query.auth_callback;
+            delete urlParts.query.state;
+
+            let cleanUrl = URL.format(urlParts);
+
+            ctx.request.kauth.grant = grant;
+            try {
+                keycloak.authenticated(ctx.request);
+            } catch (err) {
+                console.log(err);
+            }
+            ctx.response.redirect(cleanUrl);
+        } catch (e) {
+            console.log(e);
+        }
+    };
 };

@@ -15,7 +15,7 @@
  */
 'use strict';
 
-module.exports = function setup (request, response, next) {
-  request.kauth = {};
-  next();
+module.exports = async function setup(ctx, next) {
+  ctx.request.kauth = {};
+  await next();
 };

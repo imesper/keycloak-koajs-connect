@@ -16,23 +16,23 @@
 'use strict';
 
 module.exports = function (keycloak, logoutUrl) {
-  return function logout (request, response, next) {
-    if (request.url !== logoutUrl) {
+  return async function logout(ctx, next) {
+    if (ctx.request.url !== logoutUrl) {
       return next();
     }
 
-    if (request.kauth.grant) {
-      keycloak.deauthenticated(request);
-      request.kauth.grant.unstore(request, response);
-      delete request.kauth.grant;
+    if (ctx.request.kauth.grant) {
+      keycloak.deauthenticated(ctx.request);
+      ctx.request.kauth.grant.unstore(ctx);
+      delete ctx.request.kauth.grant;
     }
 
-    let host = request.hostname;
-    let headerHost = request.headers.host.split(':');
+    let host = ctx.request.hostname;
+    let headerHost = ctx.request.headers.host.split(':');
     let port = headerHost[1] || '';
-    let redirectUrl = request.protocol + '://' + host + (port === '' ? '' : ':' + port) + '/';
+    let redirectUrl = ctx.request.protocol + '://' + host + (port === '' ? '' : ':' + port) + '/';
     let keycloakLogoutUrl = keycloak.logoutUrl(redirectUrl);
 
-    response.redirect(keycloakLogoutUrl);
+    ctx.response.redirect(keycloakLogoutUrl);
   };
 };

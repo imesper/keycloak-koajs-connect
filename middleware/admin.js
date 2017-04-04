@@ -15,86 +15,86 @@
  */
 'use strict';
 
-function Admin (keycloak, url) {
-  this._keycloak = keycloak;
-  if (url[ url.length - 1 ] !== '/') {
-    url += '/;';
-  }
-  this._url = url + 'k_logout';
+function Admin(keycloak, url) {
+    this._keycloak = keycloak;
+    if (url[url.length - 1] !== '/') {
+        url += '/;';
+    }
+    this._url = url + 'k_logout';
 }
 
-Admin.prototype.getFunction = function () {
-  return this._adminRequest.bind(this);
+Admin.prototype.getFunction = function() {
+    return this._adminRequest.bind(this);
 };
 
-function adminLogout (request, response, keycloak) {
-  let data = '';
+async function adminLogout(ctx, keycloak) {
+    let data = '';
 
-  request.on('data', d => {
-    data += d.toString();
-  });
+    ctx.request.on('data', d => {
+        data += d.toString();
+    });
 
-  request.on('end', function () {
-    let parts = data.split('.');
-    let payload = JSON.parse(new Buffer(parts[1], 'base64').toString());
-    if (payload.action === 'LOGOUT') {
-      let sessionIDs = payload.adapterSessionIds;
-      if (!sessionIDs) {
-        keycloak.grantManager.notBefore = payload.notBefore;
-        response.send('ok');
-        return;
-      }
-      if (sessionIDs && sessionIDs.length > 0) {
-        let seen = 0;
-        sessionIDs.forEach(id => {
-          keycloak.unstoreGrant(id);
-          ++seen;
-          if (seen === sessionIDs.length) {
-            response.send('ok');
-          }
-        });
-      } else {
-        response.send('ok');
-      }
-    }
-  });
+    ctx.request.on('end', function() {
+        let parts = data.split('.');
+        let payload = JSON.parse(new Buffer(parts[1], 'base64').toString());
+        if (payload.action === 'LOGOUT') {
+            let sessionIDs = payload.adapterSessionIds;
+            if (!sessionIDs) {
+                keycloak.grantManager.notBefore = payload.notBefore;
+                ctx.body = 'ok';
+                return;
+            }
+            if (sessionIDs && sessionIDs.length > 0) {
+                let seen = 0;
+                sessionIDs.forEach(id => {
+                    keycloak.unstoreGrant(id);
+                    ++seen;
+                    if (seen === sessionIDs.length) {
+                        ctx.body = 'ok';
+                    }
+                });
+            } else {
+                ctx.body = 'ok';
+            }
+        }
+    });
 }
 
-function adminNotBefore (request, response, keycloak) {
-  let data = '';
+async function adminNotBefore(ctx, keycloak) {
+    let data = '';
 
-  request.on('data', d => {
-    data += d.toString();
-  });
+    ctx.request.on('data', d => {
+        data += d.toString();
+    });
 
-  request.on('end', function () {
-    let parts = data.split('.');
-    let payload = JSON.parse(new Buffer(parts[1], 'base64').toString());
-    if (payload.action === 'PUSH_NOT_BEFORE') {
-      keycloak.grantManager.notBefore = payload.notBefore;
-      response.send('ok');
-    }
-  });
+    ctx.request.on('end', function() {
+        let parts = data.split('.');
+        let payload = JSON.parse(new Buffer(parts[1], 'base64').toString());
+        if (payload.action === 'PUSH_NOT_BEFORE') {
+            keycloak.grantManager.notBefore = payload.notBefore;
+            ctx.body = 'ok';
+        }
+    });
 }
 
-module.exports = function (keycloak, adminUrl) {
-  let url = adminUrl;
-  if (url[ url.length - 1 ] !== '/') {
-    url = url + '/';
-  }
-  let urlLogout = url + 'k_logout';
-  let urlNotBefore = url + 'k_push_not_before';
-
-  return function adminRequest (request, response, next) {
-    switch (request.url) {
-      case urlLogout:
-        adminLogout(request, response, keycloak);
-        break;
-      case urlNotBefore:
-        adminNotBefore(request, response, keycloak);
-        break;
-      default:
-        return next();
+module.exports = function(keycloak, adminUrl) {
+    let url = adminUrl;
+    if (url[url.length - 1] !== '/') {
+        url = url + '/';
     }
-  };
+    let urlLogout = url + 'k_logout';
+    let urlNotBefore = url + 'k_push_not_before';
+
+    return async function adminRequest(ctx, next) {
+        switch (ctx.request.url) {
+            case urlLogout:
+                adminLogout(ctx, keycloak);
+                break;
+            case urlNotBefore:
+                adminNotBefore(ctx, keycloak);
+                break;
+            default:
+                await next();
+        }
+    };
 };

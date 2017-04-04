@@ -15,12 +15,19 @@
  */
 'use strict';
 
-module.exports = function (keycloak) {
-  return function grantAttacher (request, response, next) {
-    keycloak.getGrant(request, response)
-      .then(grant => {
-        request.kauth.grant = grant;
-      })
-      .then(next).catch(() => next());
-  };
-};
+module.exports = function(keycloak) {
+    return async function grantAttacher(ctx, next) {
+        try {
+            const grant = await keycloak.getGrant(ctx);
+            ctx.request.kauth.grant = grant;
+            await next();
+        } catch (err) {
+            console.log(err);
+            //   try{
+            //       await next();
+            //   }catch(err){
+            //       console.log("Caught " + err);
+            //   }
+        }
+    };
+}
