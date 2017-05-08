@@ -1,7 +1,7 @@
 {
-  "name": "keycloak-connect",
-  "version": "3.0.0",
-  "description": "Keycloak Connect Middleware",
+  "name": "keycloak-koajs-connect",
+  "version": "3.1.0",
+  "description": "Keycloak Connect Middleware Koajs -- Adaptation from keycloak for expressjs",
   "homepage": "http://keycloak.org",
   "main": "index.js",
   "scripts": {
@@ -10,11 +10,13 @@
     "test": "tape test/unit/keycloak-object-test.js test/keycloak-connect-test.js",
     "prepublish": "nsp check",
     "docs": "jsdoc --verbose -d docs -t ./node_modules/ink-docstrap/template -R README.md index.js ./middleware/*.js stores/*.js",
-    "coverage": "istanbul cover tape test/keycloak-connect-test.js tape test/unit/keycloak-object-test.js"
+    "coverage": "istanbul cover tape -- test/unit/*.js | istanbul cover tape -- test/integration/*.js",
+    "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls"
   },
   "keywords": [
     "sso",
     "keycloak",
+    "koaja",
     "oauth",
     "oauth2.0",
     "authentication"
@@ -33,7 +35,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "keycloak-auth-utils": "3.0.0"
+    "keycloak-auth-utils": "3.1.0"
   },
   "bundledDependencies": [
     "keycloak-auth-utils"
@@ -43,6 +45,7 @@
     "express-session": "^1.14.2",
     "ink-docstrap": "^1.3.0",
     "istanbul": "^0.4.5",
+    "coveralls": "^2.11.4",
     "jsdoc": "^3.4.3",
     "jshint": "^2.9.4",
     "nsp": "^2.6.2",
