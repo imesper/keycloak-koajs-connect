@@ -22,12 +22,12 @@ module.exports = function(keycloak) {
             ctx.request.kauth.grant = grant;
             await next();
         } catch (err) {
-            console.log(err);
-            //   try{
-            //       await next();
-            //   }catch(err){
-            //       console.log("Caught " + err);
-            //   }
+            //console.log(err);
+               try{
+                   await next();
+               }catch(err){
+                   console.log("Caught " + err);
+               }
         }
     };
 }
